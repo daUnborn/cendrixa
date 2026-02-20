@@ -35,15 +35,18 @@ export async function updateSession(request: NextRequest) {
     request.nextUrl.pathname.startsWith(path)
   );
 
-  if (!user && !isPublicPath && request.nextUrl.pathname !== "/") {
+  // Onboarding is protected but doesn't redirect to dashboard
+  const isOnboarding = request.nextUrl.pathname === "/onboarding";
+
+  if (!user && !isPublicPath && !isOnboarding && request.nextUrl.pathname !== "/") {
     const url = request.nextUrl.clone();
     url.pathname = "/login";
     return NextResponse.redirect(url);
   }
 
-  if (user && isPublicPath) {
+  if (user && isPublicPath && !request.nextUrl.pathname.startsWith("/auth/callback")) {
     const url = request.nextUrl.clone();
-    url.pathname = "/dashboard";
+    url.pathname = "/onboarding";
     return NextResponse.redirect(url);
   }
 

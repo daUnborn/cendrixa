@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -34,7 +34,33 @@ export default function OnboardingPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [debugInfo, setDebugInfo] = useState<string>("");
+  const [debugInfo, setDebugInfo] = useState<string>("Checking session...");
+  const [sessionChecked, setSessionChecked] = useState(false);
+
+  // Check session on mount
+  useEffect(() => {
+    async function checkSession() {
+      const supabase = createClient();
+      const { data: { session }, error } = await supabase.auth.getSession();
+
+      if (error) {
+        setDebugInfo(`❌ Session error: ${error.message}`);
+        return;
+      }
+
+      if (!session) {
+        setDebugInfo("⚠️ No session found - redirecting to login");
+        setTimeout(() => router.push("/login"), 2000);
+        return;
+      }
+
+      const { data: { user } } = await supabase.auth.getUser();
+      setDebugInfo(`✅ Logged in as ${user?.email || 'unknown'}`);
+      setSessionChecked(true);
+    }
+
+    checkSession();
+  }, [router]);
 
   async function handleSignOut() {
     const supabase = createClient();
@@ -50,35 +76,65 @@ export default function OnboardingPage() {
     const formData = new FormData(e.currentTarget);
     const supabase = createClient();
 
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) {
-      setError("Not authenticated");
+    console.log('=== ONBOARDING DEBUG START ===');
+
+    // Get session first
+    const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
+    console.log('1. Session check:', { sessionData, sessionError });
+
+    if (!sessionData.session) {
+      setError("No session found. Please sign in again.");
+      setDebugInfo("❌ No session - please sign out and sign in again");
       setLoading(false);
       return;
     }
 
-    // Debug: log user info and session
-    const { data: session } = await supabase.auth.getSession();
-    setDebugInfo(`User ID: ${user.id}, Email: ${user.email}, Session: ${session.session ? 'Valid' : 'None'}`);
-    console.log('Full user:', user);
-    console.log('Full session:', session);
+    setDebugInfo(`Session: ${sessionData.session ? 'EXISTS' : 'NONE'}`);
+
+    // Get user
+    const { data: { user }, error: userError } = await supabase.auth.getUser();
+    console.log('2. User check:', { user, userError });
+
+    if (!user) {
+      const errorMsg = `Not authenticated. Session: ${sessionData.session ? 'exists but no user' : 'missing'}`;
+      console.error('AUTH FAILED:', errorMsg);
+      setError(errorMsg);
+      setDebugInfo(`❌ ${errorMsg}`);
+      setLoading(false);
+      return;
+    }
+
+    setDebugInfo(`✅ User: ${user.email} (${user.id.substring(0, 8)}...)`);
+    console.log('3. User metadata:', user.user_metadata);
+    console.log('4. Session token exists:', !!sessionData.session?.access_token);
 
     // Create company
+    console.log('5. Attempting company insert...');
+    const companyData = {
+      name: formData.get("companyName") as string,
+      sector: formData.get("sector") as string,
+      employee_count_range: formData.get("employeeRange") as string,
+    };
+    console.log('Company data:', companyData);
+
     const { data: company, error: companyError } = await supabase
       .from("companies")
-      .insert({
-        name: formData.get("companyName") as string,
-        sector: formData.get("sector") as string,
-        employee_count_range: formData.get("employeeRange") as string,
-      })
+      .insert(companyData)
       .select()
       .single();
 
+    console.log('6. Company insert result:', { company, companyError });
+
     if (companyError) {
-      setError(companyError.message);
+      const fullError = `Company insert failed: ${companyError.message} (Code: ${companyError.code}, Details: ${companyError.details})`;
+      console.error('COMPANY ERROR:', companyError);
+      setError(fullError);
+      setDebugInfo(`❌ ${fullError}`);
       setLoading(false);
       return;
     }
+
+    console.log('7. Company created successfully:', company.id);
 
     // Add user as owner
     const { error: memberError } = await supabase
