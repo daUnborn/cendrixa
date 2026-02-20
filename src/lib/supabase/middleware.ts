@@ -13,7 +13,7 @@ export async function updateSession(request: NextRequest) {
           return request.cookies.getAll();
         },
         setAll(cookiesToSet) {
-          cookiesToSet.forEach(({ name, value, options }) =>
+          cookiesToSet.forEach(({ name, value }) =>
             request.cookies.set(name, value)
           );
           supabaseResponse = NextResponse.next({ request });
@@ -29,24 +29,23 @@ export async function updateSession(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser();
 
+  const pathname = request.nextUrl.pathname;
+
   // Public routes that don't require auth
   const publicPaths = ["/login", "/signup", "/forgot-password", "/auth/callback"];
-  const isPublicPath = publicPaths.some((path) =>
-    request.nextUrl.pathname.startsWith(path)
-  );
+  const isPublicPath = publicPaths.some((path) => pathname.startsWith(path));
 
-  // Onboarding is protected but doesn't redirect to dashboard
-  const isOnboarding = request.nextUrl.pathname === "/onboarding";
-
-  if (!user && !isPublicPath && !isOnboarding && request.nextUrl.pathname !== "/") {
+  // Redirect unauthenticated users to login (except public paths and landing page)
+  if (!user && !isPublicPath && pathname !== "/") {
     const url = request.nextUrl.clone();
     url.pathname = "/login";
     return NextResponse.redirect(url);
   }
 
-  if (user && isPublicPath && !request.nextUrl.pathname.startsWith("/auth/callback")) {
+  // Redirect authenticated users away from auth pages
+  if (user && isPublicPath) {
     const url = request.nextUrl.clone();
-    url.pathname = "/onboarding";
+    url.pathname = "/dashboard";
     return NextResponse.redirect(url);
   }
 
