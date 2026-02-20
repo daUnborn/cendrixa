@@ -23,11 +23,13 @@ export async function GET(request: Request) {
 
     if (!error && data.session) {
       // Check if user already has a company
-      const { data: membership } = await supabase
+      const { data: membership, error: memberError } = await supabase
         .from('company_members')
         .select('company_id')
         .eq('user_id', data.user.id)
-        .single();
+        .maybeSingle();
+
+      console.log('Membership check:', { membership, memberError });
 
       const redirectPath = membership ? '/dashboard' : '/onboarding';
       console.log('Redirecting to:', redirectPath);
