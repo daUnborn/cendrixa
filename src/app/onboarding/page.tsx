@@ -34,6 +34,13 @@ export default function OnboardingPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [debugInfo, setDebugInfo] = useState<string>("");
+
+  async function handleSignOut() {
+    const supabase = createClient();
+    await supabase.auth.signOut();
+    router.push("/login");
+  }
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -49,6 +56,12 @@ export default function OnboardingPage() {
       setLoading(false);
       return;
     }
+
+    // Debug: log user info and session
+    const { data: session } = await supabase.auth.getSession();
+    setDebugInfo(`User ID: ${user.id}, Email: ${user.email}, Session: ${session.session ? 'Valid' : 'None'}`);
+    console.log('Full user:', user);
+    console.log('Full session:', session);
 
     // Create company
     const { data: company, error: companyError } = await supabase
@@ -100,9 +113,17 @@ export default function OnboardingPage() {
           </CardDescription>
         </CardHeader>
         <CardContent>
+          <div className="mb-4 flex justify-end">
+            <Button type="button" variant="outline" onClick={handleSignOut} size="sm">
+              Sign Out
+            </Button>
+          </div>
           <form onSubmit={handleSubmit} className="space-y-4">
             {error && (
               <div className="rounded-md bg-destructive/10 p-3 text-sm text-destructive">{error}</div>
+            )}
+            {debugInfo && (
+              <div className="rounded-md bg-blue-50 p-3 text-xs text-blue-800">{debugInfo}</div>
             )}
             <div className="space-y-2">
               <Label htmlFor="companyName">Company name</Label>
