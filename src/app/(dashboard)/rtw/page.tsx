@@ -3,8 +3,9 @@ import { redirect } from "next/navigation";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { AlertTriangle, CheckCircle, Clock } from "lucide-react";
+import { AlertTriangle, CheckCircle, Clock, FileText } from "lucide-react";
 import { AddRtwDialog } from "./add-rtw-dialog";
+import { getSignedUrl } from "@/lib/supabase/storage";
 
 function statusBadge(status: string) {
   switch (status) {
@@ -41,9 +42,17 @@ export default async function RtwPage() {
     .eq("is_active", true)
     .order("last_name");
 
-  const expired = checks?.filter(c => c.status === "expired").length ?? 0;
-  const expiring = checks?.filter(c => c.status === "expiring_soon").length ?? 0;
-  const valid = checks?.filter(c => c.status === "valid").length ?? 0;
+  // Resolve signed URLs for documents
+  const checksWithUrls = await Promise.all(
+    (checks ?? []).map(async (check) => ({
+      ...check,
+      signedUrl: check.document_url ? await getSignedUrl(check.document_url) : null,
+    }))
+  );
+
+  const expired = checksWithUrls.filter(c => c.status === "expired").length;
+  const expiring = checksWithUrls.filter(c => c.status === "expiring_soon").length;
+  const valid = checksWithUrls.filter(c => c.status === "valid").length;
 
   return (
     <div className="space-y-6">
@@ -93,12 +102,13 @@ export default async function RtwPage() {
               <TableHead>Reference</TableHead>
               <TableHead>Check Date</TableHead>
               <TableHead>Expiry Date</TableHead>
+              <TableHead>Document</TableHead>
               <TableHead>Status</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
-            {checks && checks.length > 0 ? (
-              checks.map((check) => {
+            {checksWithUrls && checksWithUrls.length > 0 ? (
+              checksWithUrls.map((check) => {
                 const emp = check.employees as unknown as { first_name: string; last_name: string } | null;
                 return (
                   <TableRow key={check.id}>
@@ -111,13 +121,22 @@ export default async function RtwPage() {
                     <TableCell>
                       {check.expiry_date ? new Date(check.expiry_date).toLocaleDateString("en-GB") : "No expiry"}
                     </TableCell>
+                    <TableCell>
+                      {check.signedUrl ? (
+                        <a href={check.signedUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-sm text-blue-600 hover:underline">
+                          <FileText className="h-3.5 w-3.5" />View
+                        </a>
+                      ) : (
+                        <span className="text-muted-foreground text-sm">—</span>
+                      )}
+                    </TableCell>
                     <TableCell>{statusBadge(check.status)}</TableCell>
                   </TableRow>
                 );
               })
             ) : (
               <TableRow>
-                <TableCell colSpan={6} className="py-8 text-center text-muted-foreground">
+                <TableCell colSpan={7} className="py-8 text-center text-muted-foreground">
                   No right-to-work checks recorded yet. Add your first check.
                 </TableCell>
               </TableRow>

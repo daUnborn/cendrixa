@@ -48,7 +48,8 @@ export default async function DashboardPage() {
     { count: openCases },
     { data: contractsExpiring },
     { count: activePolicies },
-    { count: policiesNeedReview },
+    { data: activePoliciesWithAck },
+    { data: policyAckRows },
     { data: unacknowledgedAlerts },
   ] = await Promise.all([
     supabase.from("employees").select("*", { count: "exact", head: true }).eq("company_id", companyId),
@@ -57,7 +58,8 @@ export default async function DashboardPage() {
     supabase.from("cases").select("*", { count: "exact", head: true }).eq("company_id", companyId).neq("status", "closed"),
     supabase.from("contracts").select("id").eq("company_id", companyId).eq("is_current", true).not("renewal_date", "is", null),
     supabase.from("company_policies").select("*", { count: "exact", head: true }).eq("company_id", companyId).eq("status", "active"),
-    supabase.from("company_policies").select("*", { count: "exact", head: true }).eq("company_id", companyId).eq("needs_update", true),
+    supabase.from("company_policies").select("id, requires_acknowledgement").eq("company_id", companyId).eq("status", "active").eq("requires_acknowledgement", true),
+    supabase.from("policy_acknowledgements").select("policy_id").eq("company_id", companyId),
     supabase.from("legal_alerts").select("id").eq("is_active", true),
   ]);
 
@@ -65,15 +67,24 @@ export default async function DashboardPage() {
   const contractIssues = contractsExpiring?.length ?? 0;
   const alertCount = unacknowledgedAlerts?.length ?? 0;
 
+  // Count policies needing acknowledgements
+  const ackCountsByPolicy: Record<string, number> = {};
+  (policyAckRows ?? []).forEach((row) => {
+    ackCountsByPolicy[row.policy_id] = (ackCountsByPolicy[row.policy_id] ?? 0) + 1;
+  });
+  const policiesNeedingAck = (activePoliciesWithAck ?? []).filter(
+    (p) => (ackCountsByPolicy[p.id] ?? 0) < (activeEmployees ?? 0)
+  ).length;
+
   // Calculate compliance areas
   const rtwStatus: ComplianceLevel = rtwIssues === 0 ? "compliant" : rtwIssues <= 2 ? "at_risk" : "non_compliant";
-  const policyStatus: ComplianceLevel = (policiesNeedReview ?? 0) === 0 ? "compliant" : "at_risk";
+  const policyStatus: ComplianceLevel = policiesNeedingAck === 0 ? "compliant" : "at_risk";
   const caseStatus: ComplianceLevel = (openCases ?? 0) === 0 ? "compliant" : "at_risk";
   const contractStatus: ComplianceLevel = contractIssues === 0 ? "compliant" : contractIssues <= 2 ? "at_risk" : "non_compliant";
 
   const areas = [
     { title: "Right to Work", status: rtwStatus, issues: rtwIssues, icon: FileCheck, href: "/rtw", description: `${rtwIssues} checks need attention` },
-    { title: "Policies", status: policyStatus, issues: policiesNeedReview ?? 0, icon: FileText, href: "/policies", description: `${policiesNeedReview ?? 0} policies need review` },
+    { title: "Policies", status: policyStatus, issues: policiesNeedingAck, icon: FileText, href: "/policies", description: `${policiesNeedingAck} need acknowledgements` },
     { title: "Cases", status: caseStatus, issues: openCases ?? 0, icon: Scale, href: "/cases", description: `${openCases ?? 0} open cases` },
     { title: "Contracts", status: contractStatus, issues: contractIssues, icon: ClipboardList, href: "/contracts", description: `${contractIssues} contracts expiring soon` },
   ];
@@ -136,7 +147,7 @@ export default async function DashboardPage() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{activePolicies ?? 0}</div>
-            <p className="text-xs text-muted-foreground">{policiesNeedReview ?? 0} need review</p>
+            <p className="text-xs text-muted-foreground">{policiesNeedingAck} need acknowledgements</p>
           </CardContent>
         </Card>
         <Card>

@@ -121,6 +121,8 @@ export interface RtwCheck {
   updated_at: string;
 }
 
+export type SigningStatus = "unsigned" | "pending" | "signed";
+
 export interface Contract {
   id: string;
   company_id: string;
@@ -136,6 +138,12 @@ export interface Contract {
   document_url: string | null;
   is_current: boolean;
   notes: string | null;
+  signature_token: string | null;
+  signed_at: string | null;
+  signature_data: string | null;
+  signer_name: string | null;
+  signer_ip: string | null;
+  signing_status: SigningStatus;
   created_at: string;
   updated_at: string;
 }
@@ -159,18 +167,37 @@ export interface PolicyTemplate {
 export interface CompanyPolicy {
   id: string;
   company_id: string;
-  template_id: string | null;
   title: string;
-  content: string;
+  description: string | null;
+  file_path: string | null;
+  file_name: string | null;
+  file_size_bytes: number | null;
+  category: string;
   status: PolicyStatus;
   version: string;
-  adopted_date: string | null;
   review_date: string | null;
   approved_by: string | null;
-  needs_update: boolean;
-  update_reason: string | null;
+  access_token: string | null;
+  requires_acknowledgement: boolean;
+  activated_at: string | null;
+  activated_by: string | null;
+  archived_at: string | null;
+  archived_by: string | null;
+  uploaded_by: string | null;
   created_at: string;
   updated_at: string;
+}
+
+export interface PolicyAcknowledgement {
+  id: string;
+  policy_id: string;
+  company_id: string;
+  employee_id: string | null;
+  signer_name: string;
+  signer_email: string | null;
+  ip_address: string | null;
+  user_agent: string | null;
+  acknowledged_at: string;
 }
 
 export interface Case {
@@ -274,6 +301,7 @@ export interface Database {
       contracts: Table<Contract>;
       policy_templates: Table<PolicyTemplate>;
       company_policies: Table<CompanyPolicy>;
+      policy_acknowledgements: Table<PolicyAcknowledgement>;
       cases: Table<Case>;
       case_steps: Table<CaseStep>;
       case_documents: Table<CaseDocument>;

@@ -104,6 +104,11 @@ export function AddRtwDialog({ employees }: Props) {
             </div>
           </div>
           <div className="space-y-2">
+            <Label htmlFor="document">Document scan</Label>
+            <Input id="document" name="document" type="file" accept=".jpg,.jpeg,.png,.pdf" />
+            <p className="text-xs text-muted-foreground">Upload a copy of the document (JPG, PNG, or PDF, max 10MB)</p>
+          </div>
+          <div className="space-y-2">
             <Label htmlFor="notes">Notes</Label>
             <Textarea id="notes" name="notes" placeholder="Any additional notes..." />
           </div>

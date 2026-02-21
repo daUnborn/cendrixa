@@ -97,6 +97,11 @@ export function AddContractDialog({ employees }: Props) {
             <Input name="salaryAmount" type="number" step="0.01" placeholder="e.g. 30000" />
           </div>
           <div className="space-y-2">
+            <Label>Contract document</Label>
+            <Input name="document" type="file" accept=".pdf" />
+            <p className="text-xs text-muted-foreground">Upload the contract PDF (max 10MB)</p>
+          </div>
+          <div className="space-y-2">
             <Label>Notes</Label>
             <Textarea name="notes" placeholder="Any notes..." />
           </div>

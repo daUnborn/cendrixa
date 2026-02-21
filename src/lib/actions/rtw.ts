@@ -1,6 +1,7 @@
 "use server";
 
 import { createClient } from "@/lib/supabase/server";
+import { uploadDocument } from "@/lib/supabase/storage";
 import { revalidatePath } from "next/cache";
 
 async function getCompanyId() {
@@ -31,6 +32,15 @@ export async function createRtwCheck(formData: FormData) {
     else if (expiry < thirtyDays) status = "expiring_soon";
   }
 
+  // Handle file upload
+  let documentUrl: string | null = null;
+  const file = formData.get("document") as File | null;
+  if (file && file.size > 0) {
+    const { path, error: uploadError } = await uploadDocument(companyId, "rtw", file);
+    if (uploadError) return { error: `File upload failed: ${uploadError}` };
+    documentUrl = path;
+  }
+
   const { data, error } = await supabase.from("rtw_checks").insert({
     company_id: companyId,
     employee_id: formData.get("employeeId") as string,
@@ -42,6 +52,7 @@ export async function createRtwCheck(formData: FormData) {
     status,
     checked_by: userId,
     notes: formData.get("notes") as string || null,
+    document_url: documentUrl,
   }).select().single();
 
   if (error) return { error: error.message };

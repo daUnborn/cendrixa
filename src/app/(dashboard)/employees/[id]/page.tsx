@@ -5,6 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import Link from "next/link";
+import { getSignedUrl } from "@/lib/supabase/storage";
 
 export default async function EmployeeDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -29,11 +30,18 @@ export default async function EmployeeDetailPage({ params }: { params: Promise<{
 
   if (!employee) notFound();
 
-  const [{ data: rtwChecks }, { data: contracts }, { data: cases }] = await Promise.all([
+  const [{ data: rtwChecksRaw }, { data: contracts }, { data: cases }] = await Promise.all([
     supabase.from("rtw_checks").select("*").eq("employee_id", id).order("check_date", { ascending: false }),
     supabase.from("contracts").select("*").eq("employee_id", id).order("start_date", { ascending: false }),
     supabase.from("cases").select("*").eq("employee_id", id).order("opened_date", { ascending: false }),
   ]);
+
+  const rtwChecks = await Promise.all(
+    (rtwChecksRaw ?? []).map(async (check) => ({
+      ...check,
+      signedUrl: check.document_url ? await getSignedUrl(check.document_url) : null,
+    }))
+  );
 
   return (
     <div className="space-y-6">
@@ -87,16 +95,22 @@ export default async function EmployeeDetailPage({ params }: { params: Promise<{
                 <TableHead>Reference</TableHead>
                 <TableHead>Check Date</TableHead>
                 <TableHead>Expiry</TableHead>
+                <TableHead>Document</TableHead>
                 <TableHead>Status</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {rtwChecks?.map(check => (
+              {rtwChecks.map(check => (
                 <TableRow key={check.id}>
                   <TableCell className="capitalize">{check.document_type.replace(/_/g, " ")}</TableCell>
                   <TableCell>{check.document_reference || check.share_code || "—"}</TableCell>
                   <TableCell>{new Date(check.check_date).toLocaleDateString("en-GB")}</TableCell>
                   <TableCell>{check.expiry_date ? new Date(check.expiry_date).toLocaleDateString("en-GB") : "—"}</TableCell>
+                  <TableCell>
+                    {check.signedUrl ? (
+                      <a href={check.signedUrl} target="_blank" rel="noopener noreferrer" className="text-sm text-blue-600 hover:underline">View</a>
+                    ) : "—"}
+                  </TableCell>
                   <TableCell>
                     <Badge className={check.status === "valid" ? "bg-green-100 text-green-800" : check.status === "expired" ? "bg-red-100 text-red-800" : "bg-amber-100 text-amber-800"}>
                       {check.status.replace("_", " ")}
@@ -104,8 +118,8 @@ export default async function EmployeeDetailPage({ params }: { params: Promise<{
                   </TableCell>
                 </TableRow>
               ))}
-              {(!rtwChecks || rtwChecks.length === 0) && (
-                <TableRow><TableCell colSpan={5} className="py-4 text-center text-muted-foreground">No checks recorded</TableCell></TableRow>
+              {rtwChecks.length === 0 && (
+                <TableRow><TableCell colSpan={6} className="py-4 text-center text-muted-foreground">No checks recorded</TableCell></TableRow>
               )}
             </TableBody>
           </Table>

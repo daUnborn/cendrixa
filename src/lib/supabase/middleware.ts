@@ -32,8 +32,12 @@ export async function updateSession(request: NextRequest) {
   const pathname = request.nextUrl.pathname;
 
   // Public routes that don't require auth
-  const publicPaths = ["/login", "/signup", "/forgot-password", "/auth/callback"];
+  const publicPaths = ["/login", "/signup", "/forgot-password", "/auth/callback", "/sign", "/api/sign", "/policy", "/api/policy"];
   const isPublicPath = publicPaths.some((path) => pathname.startsWith(path));
+
+  // Auth-specific pages that logged-in users should be redirected away from
+  const authOnlyPaths = ["/login", "/signup", "/forgot-password"];
+  const isAuthOnlyPath = authOnlyPaths.some((path) => pathname.startsWith(path));
 
   // Redirect unauthenticated users to login (except public paths and landing page)
   if (!user && !isPublicPath && pathname !== "/") {
@@ -42,8 +46,8 @@ export async function updateSession(request: NextRequest) {
     return NextResponse.redirect(url);
   }
 
-  // Redirect authenticated users away from auth pages
-  if (user && isPublicPath) {
+  // Redirect authenticated users away from auth pages only (not all public paths)
+  if (user && isAuthOnlyPath) {
     const url = request.nextUrl.clone();
     url.pathname = "/dashboard";
     return NextResponse.redirect(url);
