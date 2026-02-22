@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from 'react';
 import * as pdfjsLib from 'pdfjs-dist';
 import { Button } from '@/components/ui/button';
-import { SignaturePad } from '@/components/signature-pad';
+import { SignaturePadModal } from '@/components/signature-pad-modal';
 
 // Configure PDF.js worker
 if (typeof window !== 'undefined') {
@@ -213,12 +213,11 @@ export function PDFSignatureViewer({ pdfUrl, onSignatureComplete }: PDFSignature
       )}
 
       {/* Signature pad modal */}
-      {showSignaturePad && (
-        <SignaturePad
-          onSubmit={handleSignatureSubmit}
-          onCancel={() => setShowSignaturePad(false)}
-        />
-      )}
+      <SignaturePadModal
+        open={showSignaturePad}
+        onClose={() => setShowSignaturePad(false)}
+        onSubmit={handleSignatureSubmit}
+      />
     </div>
   );
 }

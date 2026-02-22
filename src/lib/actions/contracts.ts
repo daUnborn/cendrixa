@@ -113,12 +113,12 @@ export async function generateAndSendSigningLink(
       id,
       contract_type,
       signing_status,
-      employees (
+      employees!inner (
         first_name,
         last_name,
         email
       ),
-      companies (
+      companies!inner (
         name
       )
     `)
@@ -128,6 +128,10 @@ export async function generateAndSendSigningLink(
 
   if (!contract) return { error: "Contract not found" };
   if (contract.signing_status === "signed") return { error: "Contract is already signed" };
+
+  // Type assertion for the joined data
+  const employee = contract.employees as unknown as { first_name: string; last_name: string; email: string };
+  const company = contract.companies as unknown as { name: string };
 
   const token = crypto.randomUUID();
 
@@ -148,17 +152,17 @@ export async function generateAndSendSigningLink(
 
   // Send via email
   if (deliveryMethod === 'email') {
-    if (!contract.employees?.email) {
+    if (!employee?.email) {
       return { error: 'Employee has no email address' };
     }
 
     try {
       await sendSigningLinkEmail({
-        to: contract.employees.email,
-        employeeName: `${contract.employees.first_name} ${contract.employees.last_name}`,
+        to: employee.email,
+        employeeName: `${employee.first_name} ${employee.last_name}`,
         signingLink,
         contractType: contract.contract_type,
-        companyName: contract.companies?.name || 'Your company'
+        companyName: company?.name || 'Your company'
       });
 
       await supabase.from("audit_logs").insert({
@@ -167,10 +171,10 @@ export async function generateAndSendSigningLink(
         action: "update",
         entity_type: "contract",
         entity_id: contractId,
-        description: `Sent contract signing link via email to ${contract.employees.email}`,
+        description: `Sent contract signing link via email to ${employee.email}`,
         metadata: {
           delivery_method: 'email',
-          recipient_email: contract.employees.email
+          recipient_email: employee.email
         }
       });
     } catch (emailError: any) {
@@ -193,6 +197,6 @@ export async function generateAndSendSigningLink(
     success: true,
     token,
     sentVia: deliveryMethod,
-    recipientEmail: deliveryMethod === 'email' ? contract.employees?.email : undefined
+    recipientEmail: deliveryMethod === 'email' ? employee?.email : undefined
   };
 }
