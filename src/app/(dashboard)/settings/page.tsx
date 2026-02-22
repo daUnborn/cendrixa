@@ -77,6 +77,43 @@ export default async function SettingsPage() {
             </div>
           </CardContent>
         </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>System</CardTitle>
+            <CardDescription>Build and deployment information</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="flex items-center justify-between">
+              <span className="text-sm font-medium">Version</span>
+              <a
+                href={`https://github.com/daUnborn/cendrixa/commit/${process.env.NEXT_PUBLIC_BUILD_SHA}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-sm font-mono text-primary hover:underline"
+              >
+                {process.env.NEXT_PUBLIC_BUILD_SHA || "unknown"}
+              </a>
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="text-sm font-medium">Built</span>
+              <span className="text-sm">
+                {process.env.NEXT_PUBLIC_BUILD_TIME
+                  ? new Date(process.env.NEXT_PUBLIC_BUILD_TIME).toLocaleString("en-GB", {
+                      day: "2-digit", month: "2-digit", year: "numeric",
+                      hour: "2-digit", minute: "2-digit", hour12: false,
+                    })
+                  : "unknown"}
+              </span>
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="text-sm font-medium">Environment</span>
+              <Badge variant="outline" className="capitalize">
+                {process.env.NEXT_PUBLIC_VERCEL_ENV || "development"}
+              </Badge>
+            </div>
+          </CardContent>
+        </Card>
       </div>
     </div>
   );

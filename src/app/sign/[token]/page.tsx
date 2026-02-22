@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { SignaturePad } from "@/components/signature-pad";
+import { PDFSignatureViewer } from "@/components/pdf-signature-viewer";
 import { CheckCircle, FileText, Loader2 } from "lucide-react";
 
 interface ContractData {
@@ -31,8 +31,6 @@ export default function SignContractPage() {
   const [contract, setContract] = useState<ContractData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [signerName, setSignerName] = useState("");
-  const [signatureData, setSignatureData] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [signed, setSigned] = useState(false);
 
@@ -53,16 +51,18 @@ export default function SignContractPage() {
       .finally(() => setLoading(false));
   }, [token]);
 
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    if (!signatureData || !signerName.trim()) return;
-
+  async function handleSignatureComplete(
+    signatureData: string,
+    signerName: string,
+    signatureZone: { page: number; x: number; y: number; width: number; height: number }
+  ) {
     setSubmitting(true);
+    setError(null);
     try {
       const res = await fetch(`/api/sign/${token}/submit`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ signatureData, signerName: signerName.trim() }),
+        body: JSON.stringify({ signatureData, signerName, signatureZone }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error);
@@ -174,56 +174,35 @@ export default function SignContractPage() {
               </div>
             )}
 
-            {contract?.documentUrl && (
-              <a
-                href={contract.documentUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center gap-2 rounded-md border px-4 py-2 text-sm font-medium hover:bg-gray-100"
-              >
-                <FileText className="h-4 w-4" />
-                View Contract Document
-              </a>
-            )}
           </CardContent>
         </Card>
 
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-lg">Your Signature</CardTitle>
-            <CardDescription>Please sign below and enter your full name to confirm.</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div className="space-y-2">
-                <Label>Draw your signature</Label>
-                <SignaturePad onSignatureChange={setSignatureData} />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="signerName">Full legal name</Label>
-                <Input
-                  id="signerName"
-                  value={signerName}
-                  onChange={(e) => setSignerName(e.target.value)}
-                  placeholder="Enter your full name"
-                  required
-                />
-              </div>
-              {error && <p className="text-sm text-red-600">{error}</p>}
-              <Button
-                type="submit"
-                className="w-full"
-                disabled={submitting || !signatureData || !signerName.trim()}
-              >
-                {submitting ? (
-                  <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Submitting...</>
-                ) : (
-                  "Sign Contract"
-                )}
-              </Button>
-            </form>
-          </CardContent>
-        </Card>
+        {contract?.documentUrl ? (
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg">Sign Document</CardTitle>
+              <CardDescription>
+                Review the document below and tap the signature zone to sign.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              {error && <p className="text-sm text-red-600 mb-4">{error}</p>}
+              <PDFSignatureViewer
+                pdfUrl={contract.documentUrl}
+                onSignatureComplete={handleSignatureComplete}
+              />
+            </CardContent>
+          </Card>
+        ) : (
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg text-yellow-700">No Document Available</CardTitle>
+              <CardDescription>
+                This contract does not have an attached PDF document. Please contact {contract?.company?.name} for assistance.
+              </CardDescription>
+            </CardHeader>
+          </Card>
+        )}
       </div>
     </div>
   );

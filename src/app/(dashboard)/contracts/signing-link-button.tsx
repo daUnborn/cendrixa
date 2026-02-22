@@ -2,8 +2,14 @@
 
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Link2, Check, Loader2 } from "lucide-react";
-import { generateSigningLink } from "@/lib/actions/contracts";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Link2, Check, Loader2, Mail, Copy, ChevronDown } from "lucide-react";
+import { generateSigningLink, generateAndSendSigningLink } from "@/lib/actions/contracts";
 import { toast } from "sonner";
 
 interface Props {
@@ -15,7 +21,7 @@ interface Props {
 export function SigningLinkButton({ contractId, signingStatus, existingToken }: Props) {
   const [loading, setLoading] = useState(false);
 
-  async function handleClick() {
+  async function handleCopyLink() {
     if (signingStatus === "signed") return;
 
     // If there's already a pending token, just copy it
@@ -38,6 +44,19 @@ export function SigningLinkButton({ contractId, signingStatus, existingToken }: 
     setLoading(false);
   }
 
+  async function handleSendEmail() {
+    if (signingStatus === "signed") return;
+
+    setLoading(true);
+    const result = await generateAndSendSigningLink(contractId, 'email');
+    if (result.error) {
+      toast.error(result.error);
+    } else if (result.success) {
+      toast.success(`Signing link sent via email to ${result.recipientEmail}`);
+    }
+    setLoading(false);
+  }
+
   if (signingStatus === "signed") {
     return (
       <span className="inline-flex items-center gap-1 text-sm text-green-700">
@@ -47,12 +66,30 @@ export function SigningLinkButton({ contractId, signingStatus, existingToken }: 
   }
 
   return (
-    <Button variant="outline" size="sm" onClick={handleClick} disabled={loading}>
-      {loading ? (
-        <Loader2 className="h-3.5 w-3.5 animate-spin" />
-      ) : (
-        <><Link2 className="mr-1 h-3.5 w-3.5" />{signingStatus === "pending" ? "Copy Link" : "Get Link"}</>
-      )}
-    </Button>
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button variant="outline" size="sm" disabled={loading}>
+          {loading ? (
+            <Loader2 className="h-3.5 w-3.5 animate-spin" />
+          ) : (
+            <>
+              <Link2 className="mr-1 h-3.5 w-3.5" />
+              {signingStatus === "pending" ? "Send Link" : "Get Link"}
+              <ChevronDown className="ml-1 h-3 w-3 opacity-50" />
+            </>
+          )}
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end">
+        <DropdownMenuItem onClick={handleSendEmail}>
+          <Mail className="mr-2 h-4 w-4" />
+          Send via Email
+        </DropdownMenuItem>
+        <DropdownMenuItem onClick={handleCopyLink}>
+          <Copy className="mr-2 h-4 w-4" />
+          Copy Link
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
   );
 }

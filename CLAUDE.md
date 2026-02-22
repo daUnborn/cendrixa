@@ -12,7 +12,7 @@
 - **Hosting:** Vercel (frontend) + Supabase (backend)
 - **Payments:** Stripe (GBP, UK-focused)
 - **Email:** Resend
-- **Legal templates:** Licensed content loaded from structured JSON/DB format
+- **Document Management:** Manual upload of policies and contracts with unauthenticated signing capability
 
 ## Architecture Decisions
 - All prices in GBP (£)
@@ -25,15 +25,15 @@
 ### Core
 1. **Compliance Dashboard** — RAG (Red/Amber/Green) risk overview per company
 2. **Right-to-Work Tracking** — Employee RTW document tracking, expiry alerts, share codes
-3. **Policy Template Library** — Licensed UK-compliant templates, customisable by sector/size
-4. **Disciplinary & Grievance Workflows** — Step-by-step guided process with audit trail
+3. **Policy & Contract Management** — Manual upload of policies and contracts with version tracking
+4. **Unauthenticated Document Signing** — Magic link-based signing for employees without login
+5. **Disciplinary & Grievance Workflows** — Step-by-step guided process with audit trail
 
 ### Advanced
-5. **Auto-Updating Templates** — Flag when law changes affect existing policies
 6. **Legal Change Alerts** — Upcoming UK employment law changes notifications
-7. **Contract Management** — Renewal tracking, probation period reminders
+7. **Contract Tracking** — Renewal tracking, probation period reminders
 8. **Holiday Entitlement Calculator** — Pro-rata, part-time, statutory compliance
-9. **Tribunal Protection Audit Trail** — Exportable compliance evidence pack
+9. **Tribunal Protection Audit Trail** — Exportable compliance evidence pack with signed documents
 
 ## Pricing Tiers (Planned)
 - **Starter (£99/month):** Up to 30 employees, core features
@@ -48,6 +48,8 @@
 - Stripe webhooks for payment state — never trust client-side payment status
 - Every compliance action must create an audit log entry
 - Mobile-responsive from day one
+- Document signing uses magic links (time-limited tokens) for unauthenticated access
+- All signed documents must be permanently stored with audit trail
 
 ## File Structure
 ```
@@ -62,16 +64,17 @@
 ```
 
 ## Current Status
-- [ ] Project scaffolding
-- [ ] Supabase setup
-- [ ] Auth (signup/login/org creation)
-- [ ] Database schema
-- [ ] Compliance dashboard
-- [ ] RTW tracking
-- [ ] Policy templates
+- [x] Project scaffolding
+- [x] Supabase setup
+- [x] Auth (signup/login/org creation)
+- [x] Database schema
+- [x] Compliance dashboard
+- [x] RTW tracking
+- [x] Policy & contract upload
+- [x] Unauthenticated document signing (magic links)
 - [ ] Disciplinary/grievance workflows
-- [ ] Contract management
+- [ ] Contract tracking & reminders
 - [ ] Holiday calculator
 - [ ] Legal alerts
 - [ ] Stripe billing
-- [ ] Audit trail & export
+- [x] Audit trail & export

@@ -55,11 +55,12 @@ export default async function ContractsPage() {
     .eq("is_active", true)
     .order("last_name");
 
-  // Resolve document signed URLs
+  // Resolve document signed URLs (both original and signed documents)
   const contractsWithUrls = await Promise.all(
     (contracts ?? []).map(async (c) => ({
       ...c,
       documentSignedUrl: c.document_url ? await getSignedUrl(c.document_url) : null,
+      signedDocumentSignedUrl: c.signed_document_url ? await getSignedUrl(c.signed_document_url) : null,
     }))
   );
 
@@ -120,11 +121,17 @@ export default async function ContractsPage() {
                     <TableCell>{renewalOrEnd ? new Date(renewalOrEnd).toLocaleDateString("en-GB") : "—"}</TableCell>
                     <TableCell>{c.weekly_hours ?? "—"}</TableCell>
                     <TableCell>
-                      {c.documentSignedUrl ? (
-                        <a href={c.documentSignedUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-sm text-blue-600 hover:underline">
-                          <FileText className="h-3.5 w-3.5" />View
-                        </a>
-                      ) : "—"}
+                      <div className="flex flex-col gap-1">
+                        {c.signedDocumentSignedUrl ? (
+                          <a href={c.signedDocumentSignedUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-sm text-green-600 hover:underline font-medium">
+                            <FileText className="h-3.5 w-3.5" />Signed PDF
+                          </a>
+                        ) : c.documentSignedUrl ? (
+                          <a href={c.documentSignedUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-sm text-blue-600 hover:underline">
+                            <FileText className="h-3.5 w-3.5" />Original
+                          </a>
+                        ) : "—"}
+                      </div>
                     </TableCell>
                     <TableCell>
                       <div className="flex items-center gap-2">

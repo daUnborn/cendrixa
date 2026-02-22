@@ -19,7 +19,11 @@
       "Bash(git push:*)",
       "Bash(npm run type-check:*)",
       "Bash(grep:*)",
-      "Bash(ls:*)"
+      "Bash(ls:*)",
+      "Bash(git -C /Users/daunborn/Desktop/chimas/visa-compliance status)",
+      "Bash(gh api:*)",
+      "Bash(npm i:*)",
+      "WebSearch"
     ]
   }
 }
