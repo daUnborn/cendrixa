@@ -42,9 +42,15 @@ export async function createContract(formData: FormData) {
     salary_amount: parseFloat(formData.get("salaryAmount") as string) || null,
     notes: formData.get("notes") as string || null,
     document_url: documentUrl,
+    signed_document_url: null,
+    link_sent_at: null,
+    link_sent_via: null,
   }).select().single();
 
-  if (error) return { error: error.message };
+  if (error) {
+    console.error('Contract creation error:', error);
+    return { error: error.message };
+  }
 
   await supabase.from("audit_logs").insert({
     company_id: companyId,
