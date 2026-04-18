@@ -23,7 +23,10 @@
       "Bash(git -C /Users/daunborn/Desktop/chimas/visa-compliance status)",
       "Bash(gh api:*)",
       "Bash(npm i:*)",
-      "WebSearch"
+      "WebSearch",
+      "Bash(mkdir -p /Users/daunborn/Desktop/chimas/visa-compliance/src/app/api/documents/request/[token])",
+      "Bash(mkdir -p /Users/daunborn/Desktop/chimas/visa-compliance/src/app/documents/request/[token])",
+      "Bash(vercel env:*)"
     ]
   }
 }
