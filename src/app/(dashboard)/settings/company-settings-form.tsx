@@ -40,6 +40,7 @@ export function CompanySettingsForm({ company }: { company: Record<string, unkno
       city: form.get("city") as string || null,
       postcode: form.get("postcode") as string || null,
       phone: form.get("phone") as string || null,
+      notification_email: form.get("notificationEmail") as string || null,
     }).eq("id", company.id as string);
 
     if (error) {
@@ -91,6 +92,18 @@ export function CompanySettingsForm({ company }: { company: Record<string, unkno
           <div className="space-y-2">
             <Label>Phone</Label>
             <Input name="phone" defaultValue={(company.phone as string) || ""} />
+          </div>
+          <div className="space-y-2">
+            <Label>Notification email</Label>
+            <Input
+              name="notificationEmail"
+              type="email"
+              defaultValue={(company.notification_email as string) || ""}
+              placeholder="hr@yourcompany.com"
+            />
+            <p className="text-xs text-muted-foreground">
+              Document upload notifications and compliance alerts will be sent to this address. Defaults to the owner&apos;s login email if not set.
+            </p>
           </div>
           <Button type="submit" disabled={loading}>
             {loading ? "Saving..." : "Save Changes"}

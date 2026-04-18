@@ -80,6 +80,34 @@ export async function updateEmployee(id: string, formData: FormData) {
   return { success: true };
 }
 
+export async function updateEmployeeStatus(id: string, status: string) {
+  const { supabase, companyId, userId } = await getCompanyId();
+
+  const updates: Record<string, unknown> = { status };
+  if (status === "terminated") updates.is_active = false;
+  if (status !== "terminated") updates.is_active = true;
+
+  const { error } = await supabase.from("employees")
+    .update(updates)
+    .eq("id", id)
+    .eq("company_id", companyId);
+
+  if (error) return { error: error.message };
+
+  await supabase.from("audit_logs").insert({
+    company_id: companyId,
+    user_id: userId,
+    action: "update",
+    entity_type: "employee",
+    entity_id: id,
+    description: `Employee status changed to ${status.replace("_", " ")}`,
+  });
+
+  revalidatePath(`/employees/${id}`);
+  revalidatePath("/employees");
+  return { success: true };
+}
+
 export async function deleteEmployee(id: string) {
   const { supabase, companyId, userId } = await getCompanyId();
 

@@ -1,6 +1,27 @@
 import { createClient } from "@/lib/supabase/server";
+import { createServiceClient } from "@/lib/supabase/service";
 
 const BUCKET = "company-documents";
+
+export async function uploadDocumentAsService(
+  companyId: string,
+  folder: string,
+  file: File
+): Promise<{ path: string; error?: string }> {
+  const supabase = createServiceClient();
+
+  const ext = file.name.split(".").pop()?.toLowerCase() ?? "bin";
+  const fileName = `${crypto.randomUUID()}.${ext}`;
+  const path = `${companyId}/${folder}/${fileName}`;
+
+  const arrayBuffer = await file.arrayBuffer();
+  const { error } = await supabase.storage
+    .from(BUCKET)
+    .upload(path, arrayBuffer, { contentType: file.type, upsert: false });
+
+  if (error) return { path: "", error: error.message };
+  return { path };
+}
 
 export async function uploadDocument(
   companyId: string,

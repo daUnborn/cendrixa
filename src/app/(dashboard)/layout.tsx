@@ -1,4 +1,3 @@
-import { SidebarProvider, SidebarTrigger, SidebarInset } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/layout/app-sidebar";
 
 export default function DashboardLayout({
@@ -7,14 +6,19 @@ export default function DashboardLayout({
   children: React.ReactNode;
 }) {
   return (
-    <SidebarProvider>
+    <div style={{ display: "flex", minHeight: "100vh" }}>
       <AppSidebar />
-      <SidebarInset>
-        <header className="flex h-14 items-center gap-4 border-b px-6">
-          <SidebarTrigger />
-        </header>
-        <main className="flex-1 p-6">{children}</main>
-      </SidebarInset>
-    </SidebarProvider>
+      <div style={{ flex: 1, display: "flex", flexDirection: "column", minWidth: 0 }}>
+        <main
+          style={{
+            flex: 1,
+            padding: "1.5rem",
+            backgroundColor: "var(--color-bg-primary)",
+          }}
+        >
+          {children}
+        </main>
+      </div>
+    </div>
   );
 }

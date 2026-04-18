@@ -35,6 +35,19 @@ export type CaseOutcome =
   | "partially_upheld"
   | "not_upheld";
 export type PolicyStatus = "draft" | "active" | "archived" | "needs_review";
+export type EmployeeStatus = "active" | "on_probation" | "on_leave" | "suspended" | "terminated";
+export type DocRequestStatus = "pending" | "complete" | "expired";
+export type DocRequestItemStatus = "pending" | "uploaded";
+export type DocRequestDocumentType =
+  | "passport"
+  | "brp"
+  | "share_code"
+  | "ni_letter"
+  | "proof_of_address"
+  | "bank_statement"
+  | "birth_certificate"
+  | "visa"
+  | "other";
 export type AlertSeverity = "info" | "warning" | "critical";
 export type AuditAction =
   | "create"
@@ -58,6 +71,7 @@ export interface Company {
   postcode: string | null;
   phone: string | null;
   website: string | null;
+  notification_email: string | null;
   subscription_tier: SubscriptionTier;
   subscription_status: SubscriptionStatus;
   stripe_customer_id: string | null;
@@ -98,8 +112,38 @@ export interface Employee {
   holiday_entitlement_days: number;
   holiday_days_used: number;
   holiday_year_start: string | null;
+  status: EmployeeStatus;
   rtw_status: RtwCheckStatus;
   contract_status: ComplianceStatus;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface DocumentRequest {
+  id: string;
+  company_id: string;
+  employee_id: string;
+  title: string;
+  message: string | null;
+  deadline: string;
+  token: string;
+  token_expires_at: string;
+  status: DocRequestStatus;
+  created_by: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface DocumentRequestItem {
+  id: string;
+  request_id: string;
+  document_type: DocRequestDocumentType;
+  custom_label: string | null;
+  notes: string | null;
+  file_path: string | null;
+  file_name: string | null;
+  uploaded_at: string | null;
+  status: DocRequestItemStatus;
   created_at: string;
   updated_at: string;
 }
@@ -308,6 +352,8 @@ export interface Database {
       legal_alerts: Table<LegalAlert>;
       alert_acknowledgements: Table<AlertAcknowledgement>;
       audit_logs: Table<AuditLog>;
+      document_requests: Table<DocumentRequest>;
+      document_request_items: Table<DocumentRequestItem>;
     };
     Views: Record<string, never>;
     Functions: Record<string, never>;
@@ -326,6 +372,10 @@ export interface Database {
       policy_status: PolicyStatus;
       alert_severity: AlertSeverity;
       audit_action: AuditAction;
+      employee_status: EmployeeStatus;
+      doc_request_status: DocRequestStatus;
+      doc_request_item_status: DocRequestItemStatus;
+      doc_request_document_type: DocRequestDocumentType;
     };
     CompositeTypes: Record<string, never>;
   };
